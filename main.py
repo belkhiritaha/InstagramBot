@@ -76,7 +76,6 @@ def login_to_instagram(browser):
 
 
     # Save your login info? Not now
-    sleep(2)
     #browser.find_element_by_xpath(
         #"//*[@id='react-root']/section/main/div/div/div/div/button").click()
 
@@ -86,7 +85,7 @@ def login_to_instagram(browser):
         #"/html/body/div[5]/div/div/div/div[3]/button[2]").click()
 
 
-def automate_instagram(browser):
+def automate_instagram(browser, post_count):
     # Keep track of how many you like and comment
     likes = 0
     comments = 0
@@ -102,7 +101,7 @@ def automate_instagram(browser):
 
         # Click first thumbnail to open
         browser.implicitly_wait(30)
-        browser.find_elements(By.CLASS_NAME, '_a6hd')[0].click()
+        browser.find_elements(By.CLASS_NAME, '_a6hd')[post_count].click()
 
         sleep(2)
         commented = False
@@ -116,76 +115,12 @@ def automate_instagram(browser):
                 logger.info('Could not comment')
 
 
-        sleep(2)
-
-        sleep(randint(1, 2))
-
-        # Go through x number of photos per hashtag
-        for post in range(1, database['number_of_posts']):
-
-            try:
-                if database['like'] == True:
-                    # Like
-                    browser.implicitly_wait(30)
-                    browser.find_element_by_xpath(
-                        "/html/body/div/div[2]/div/article/div[3]/section[1]/span[1]/button").click()
-                    logger.info("Liked")
-                    likes += 1
-
-                sleep(randint(2, 4))
-
-                # Comment
-                try:
-                    browser.implicitly_wait(30)
-                    browser.find_element_by_xpath("//form").click()
-                    # Random chance of commenting
-                    do_i_comment = randint(1, database['chance_to_comment'])
-                    if do_i_comment == 1:
-
-                        browser.implicitly_wait(30)
-                        comment = browser.find_element_by_xpath("//textarea")
-
-                        sleep(
-                            randint(database['wait_to_comment']['min'], database['wait_to_comment']['max']))
-
-                        rand_comment_index = randint(
-                            0, len(database['comment_list']))
-                        comment.send_keys(
-                            database['comment_list'][rand_comment_index])
-                        comment.send_keys(Keys.ENTER)
-                        logger.info(
-                            'Commented ' + database['comment_list'][rand_comment_index])
-                        comments += 1
-                        sleep(randint(
-                            database['wait_between_posts']['min'], database['wait_between_posts']['max']))
-
-                except Exception:
-                    # Continue to next post if comments section is limited or turned off
-                    pass
-
-            except Exception:
-                # Already liked it, continue to next post
-                logger.info('Already liked this photo previously')
-                pass
-
-            # Go to next post
-            browser.implicitly_wait(30)
-            browser.find_element_by_link_text('Next').click()
-            logger.info('Getting next post')
-            sleep(randint(database['wait_between_posts']
-                  ['min'], database['wait_between_posts']['max']))
-
-    logger.info(f'Liked {likes} posts')
-    logger.info(f'Commented on {comments} posts')
-
-    # Close browser when done
-    logger.info('Closing chrome browser...')
-    browser.close()
 
 
 if __name__ == "__main__":
     browser = initialize_browser()
     login_to_instagram(browser)
-    sleep(10)
-    automate_instagram(browser)
+    sleep(5)
+    for i in range(2):
+        automate_instagram(browser, i)
     browser.close()
