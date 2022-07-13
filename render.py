@@ -1,25 +1,20 @@
-from time import sleep
-import logging
-import json
-from random import randint
-import os
-from os.path import exists
-
+from os import close
 import tkinter as tk
 from tkinter import messagebox
 from tkinter import ttk
+import json
 
 
-# Library Imports
-from selenium import webdriver
-from selenium.webdriver.common.keys import Keys
-from selenium.webdriver.common.by import By
-from selenium.common.exceptions import WebDriverException, ElementClickInterceptedException
-from webdriver_manager.chrome import ChromeDriverManager as CM
-from tkinter import *
-from tkinter.scrolledtext import ScrolledText
+"""
+Useful Links:
+https://stackoverflow.com/questions/7546050/switch-between-two-frames-in-tkinter Most useful in my opinion
+https://www.tutorialspoint.com/python/python_gui_programming.htm
+https://anzeljg.github.io/rin2/book2/2405/docs/tkinter/index.html
+https://www.youtube.com/watch?v=HjNHATw6XgY&list=PLQVvvaa0QuDclKx-QpC9wntnURXVJqLyk
+"""
 
-
+# You can also use a pandas dataframe for pokemon_info.
+# you can convert the dataframe using df.to_numpy.tolist()
 with open("data/database.json", "r") as file:
     database = json.load(file)
 
@@ -27,6 +22,8 @@ with open("data/database.json", "r") as file:
 file.close()
 
 numberOfAccounts = len(database['accounts'])
+
+pokemon_info = [['Bulbasaur', 'Grass', '318'], ['Ivysaur', 'Grass', '405'], ['Venusaur', 'Grass', '525'], ['Charmander', 'Fire', '309'], ['Charmeleon', 'Fire', '405'], ['Charizard', 'Fire', '534'], ['Squirtle', 'Water', '314'], ['Wartortle', 'Water', '405'], ['Blastoise', 'Water', '530'], ['Caterpie', 'Bug', '195'], ['Metapod', 'Bug', '205'], ['Butterfree', 'Bug', '395'], ['Weedle', 'Bug', '195'], ['Kakuna', 'Bug', '205'], ['Beedrill', 'Bug', '395'], ['Pidgey', 'Normal', '251'], ['Pidgeotto', 'Normal', '349'], ['Pidgeot', 'Normal', '479'], ['Rattata', 'Normal', '253'], ['Raticate', 'Normal', '413'], ['Spearow', 'Normal', '262'], ['Fearow', 'Normal', '442'], ['Ekans', 'Poison', '288'], ['Arbok', 'Poison', '448'], ['Pikachu', 'Electric', '320'], ['Raichu', 'Electric', '485'], ['Sandshrew', 'Ground', '300'], ['Sandslash', 'Ground', '450'], ['Nidoran?', 'Poison', '275'], ['Nidorina', 'Poison', '365'], ['Nidoqueen', 'Poison', '505'], ['Nidoran?', 'Poison', '273'], ['Nidorino', 'Poison', '365'], ['Nidoking', 'Poison', '505'], ['Clefairy', 'Fairy', '323'], ['Clefable', 'Fairy', '483'], ['Vulpix', 'Fire', '299'], ['Ninetales', 'Fire', '505'], ['Jigglypuff', 'Normal', '270'], ['Wigglytuff', 'Normal', '435'], ['Zubat', 'Poison', '245'], ['Golbat', 'Poison', '455'], ['Oddish', 'Grass', '320'], ['Gloom', 'Grass', '395'], ['Vileplume', 'Grass', '490'], ['Paras', 'Bug', '285'], ['Parasect', 'Bug', '405'], ['Venonat', 'Bug', '305'], ['Venomoth', 'Bug', '450'], ['Diglett', 'Ground', '265'], ['Dugtrio', 'Ground', '425'], ['Meowth', 'Normal', '290'], ['Persian', 'Normal', '440'], ['Psyduck', 'Water', '320'], ['Golduck', 'Water', '500'], ['Mankey', 'Fighting', '305'], ['Primeape', 'Fighting', '455'], ['Growlithe', 'Fire', '350'], ['Arcanine', 'Fire', '555'], ['Poliwag', 'Water', '300'], ['Poliwhirl', 'Water', '385'], ['Poliwrath', 'Water', '510'], ['Abra', 'Psychic', '310'], ['Kadabra', 'Psychic', '400'], ['Alakazam', 'Psychic', '500'], ['Machop', 'Fighting', '305'], ['Machoke', 'Fighting', '405'], ['Machamp', 'Fighting', '505'], ['Bellsprout', 'Grass', '300'], ['Weepinbell', 'Grass', '390'], ['Victreebel', 'Grass', '490'], ['Tentacool', 'Water', '335'], ['Tentacruel', 'Water', '515'], ['Geodude', 'Rock', '300'], ['Graveler', 'Rock', '390'], ['Golem', 'Rock', '495'], ['Ponyta', 'Fire', '410'], ['Rapidash', 'Fire', '500'], ['Slowpoke', 'Water', '315'], ['Slowbro', 'Water', '490'], ['Magnemite', 'Electric', '325'], ['Magneton', 'Electric', '465'], ["Farfetch'd", 'Normal', '377'], ['Doduo', 'Normal', '310'], ['Dodrio', 'Normal', '470'], ['Seel', 'Water', '325'], ['Dewgong', 'Water', '475'], ['Grimer', 'Poison', '325'], ['Muk', 'Poison', '500'], ['Shellder', 'Water', '305'], ['Cloyster', 'Water', '525'], ['Gastly', 'Ghost', '310'], ['Haunter', 'Ghost', '405'], ['Gengar', 'Ghost', '500'], ['Onix', 'Rock', '385'], ['Drowzee', 'Psychic', '328'], ['Hypno', 'Psychic', '483'], ['Krabby', 'Water', '325'], ['Kingler', 'Water', '475'], ['Voltorb', 'Electric', '330'], ['Electrode', 'Electric', '490'], ['Exeggcute', 'Grass', '325'], ['Exeggutor', 'Grass', '530'], ['Cubone', 'Ground', '320'], ['Marowak', 'Ground', '425'], ['Hitmonlee', 'Fighting', '455'], ['Hitmonchan', 'Fighting', '455'], ['Lickitung', 'Normal', '385'], ['Koffing', 'Poison', '340'], ['Weezing', 'Poison', '490'], ['Rhyhorn', 'Ground', '345'], ['Rhydon', 'Ground', '485'], ['Chansey', 'Normal', '450'], ['Tangela', 'Grass', '435'], ['Kangaskhan', 'Normal', '490'], ['Horsea', 'Water', '295'], ['Seadra', 'Water', '440'], ['Goldeen', 'Water', '320'], ['Seaking', 'Water', '450'], ['Staryu', 'Water', '340'], ['Starmie', 'Water', '520'], ['Scyther', 'Bug', '500'], ['Jynx', 'Ice', '455'], ['Electabuzz', 'Electric', '490'], ['Magmar', 'Fire', '495'], ['Pinsir', 'Bug', '500'], ['Tauros', 'Normal', '490'], ['Magikarp', 'Water', '200'], ['Gyarados', 'Water', '540'], ['Lapras', 'Water', '535'], ['Ditto', 'Normal', '288'], ['Eevee', 'Normal', '325'], ['Vaporeon', 'Water', '525'], ['Jolteon', 'Electric', '525'], ['Flareon', 'Fire', '525'], ['Porygon', 'Normal', '395'], ['Omanyte', 'Rock', '355'], ['Omastar', 'Rock', '495'], ['Kabuto', 'Rock', '355'], ['Kabutops', 'Rock', '495'], ['Aerodactyl', 'Rock', '515'], ['Snorlax', 'Normal', '540'], ['Articuno', 'Ice', '580'], ['Zapdos', 'Electric', '580'], ['Moltres', 'Fire', '580'], ['Dratini', 'Dragon', '300'], ['Dragonair', 'Dragon', '420'], ['Dragonite', 'Dragon', '600'], ['Mewtwo', 'Psychic', '680'], ['Mew', 'Psychic', '600']]
 account_info = [database['accounts'][i] + [database['hashtags'][i]] for i in range(numberOfAccounts)]
 print(account_info)
 
@@ -34,10 +31,7 @@ frame_styles = {"relief": "groove",
                 "bd": 3, "bg": "#BEB2A7",
                 "fg": "#073bb3", "font": ("Arial", 9, "bold")}
 
-last_info = "Starting up... (logs will be saved to logs.txt)"
-
-
-######################################GUI#############################################
+last_info = ""
 
 
 class LoginPage(tk.Tk):
@@ -83,7 +77,7 @@ class LoginPage(tk.Tk):
             password = entry_pw.get()
             # if your want to run the script as it is set validation = True
             validation = validate(username, password)
-            if validation:
+            if True:
                 tk.messagebox.showinfo("Login Successful",
                                        "Welcome {}".format(username))
                 root.deiconify()
@@ -111,10 +105,11 @@ class MyApp(tk.Tk):
         # self.resizable(0, 0) prevents the app from being resized
         # self.geometry("1024x600") fixes the applications size
         self.frames = {}
-        F = Some_Widgets
-        frame = F(main_frame, self)
-        self.frames[F] = frame
-        frame.grid(row=0, column=0, sticky="nsew")
+        pages = (Some_Widgets, PageOne, PageTwo, PageThree, PageFour)
+        for F in pages:
+            frame = F(main_frame, self)
+            self.frames[F] = frame
+            frame.grid(row=0, column=0, sticky="nsew")
         self.show_frame(Some_Widgets)
 
     def show_frame(self, name):
@@ -197,11 +192,10 @@ class Some_Widgets(GUI):  # inherits from the GUI class
         button4.place(rely=0.68, relx=0.45)
 
         # print last info
-        label_last_info = tk.Label(frame2, text_styles, text="update:")
+        label_last_info = tk.Label(frame2, text_styles, text="last info:")
         label_last_info.place(height=20, width=150, rely=0.8, relx=0.1)
-        label_last_info_value = tk.Label(frame2, text_styles, text=last_info)
+        label_last_info_value = tk.Label(frame2, text_styles, text=last_info) 
         label_last_info_value.place(height=20, width=500, rely=0.8, relx=0.295)
-
 
 
         # This is a treeview.
@@ -246,8 +240,6 @@ class Some_Widgets(GUI):  # inherits from the GUI class
             #write into new file
             with open('data/database.json', 'w+') as f:
                 json.dump(database, f)
-            numberOfAccounts = len(account_info)
-            parentBot(numberOfAccounts)
             
 
         Load_data()
@@ -307,131 +299,10 @@ class OpenNewWindow(tk.Tk):
         label1.pack(side="top")
 
 
-top = LoginPage()
-top.title("login")
-root = MyApp()
-root.withdraw()
-root.title("instagram comment bot")
-
-
-logging.basicConfig(
-    format='%(levelname)s [%(asctime)s] %(message)s', datefmt='%m/%d/%Y %r', level=logging.INFO)
-logger = logging.getLogger()
-
-def printLogtoFile(log, path):
-    f = open(path, 'w+')
-    f.write(log)
-    f.close()
-
-
-def insert_entry(container, string_to_i, row, column):
-    entry_widget = Entry(container)
-    entry_widget.insert("end", string_to_i)
-    entry_widget.grid(row=row, column=column)
-    return entry_widget
-
-
-def initialize_browser():
-
-    # Do this so we don't get DevTools and Default Adapter failure
-    options = webdriver.ChromeOptions()
-    # options.add_experimental_option('excludeSwitches', ['enable-logging'])
-    options.add_argument("--log-level=3")
-
-    # Initialize chrome driver and set chrome as our browser
-    browser = webdriver.Chrome(executable_path=CM().install(), options=options)
-
-    return browser
-
-
-def login_to_instagram(browser, account):
-    browser.get('https://www.instagram.com/')
-
-    sleep(2)
-
-    # Get the login elements and type in your credentials
-
-    browser.implicitly_wait(30)
-    username = browser.find_element_by_name('username')
-    username.send_keys(account[0])
-    browser.implicitly_wait(30)
-    password = browser.find_element_by_name('password')
-    password.send_keys(account[1])
-    password.submit()
-
-    sleep(2)
-    printLogtoFile("Logged in to account " + account[0] + "\n", "logs/log.txt")
-
-
-def comment_instagram(browser, hashtag, comment_to_send, post_count):
-    # Keep track of how many you like and comment
-    likes = 0
-    comments = 0
-
-    with open("data/database.json", "r") as file:
-        database = json.load(file)
-
-    browser.implicitly_wait(30)
-    browser.get(f'https://www.instagram.com/explore/tags/{hashtag}/')
-    printLogtoFile(f'Exploring #{hashtag} \n', "logs/log.txt")
-    sleep(randint(1, 2))
-
-        # Click first thumbnail to open
-    browser.implicitly_wait(30)
-    browser.find_elements(By.CLASS_NAME, '_a6hd')[post_count].click()
-
-    sleep(2)
-    commented = False
-    while not commented:
-        try:
-            comment = browser.find_element(By.CLASS_NAME, '_aaoc')
-            comment.send_keys(comment_to_send, Keys.ENTER)
-            printLogtoFile(f'Commented on post #{post_count} \n', "logs/log.txt")
-            commented = True
-        except WebDriverException:
-            printLogtoFile("Could not comment on post\n", "logs/log.txt")
-
-
-
-def getCommentedPosts(account):
-    if exists(account[0]+".txt"):            # if file exists, open it on r+
-        file = open(account[0]+".txt","r+")
-    else:
-        file = open(account[0]+".txt", "w+") # else, create it and open it
-
-    lines = file.readlines()
-    return lines
-
-
-
-def launch_bot_instance(accountIndex):
-    # open database
-    with open("data/database.json", "r") as file:
-        database = json.load(file)
-
-    browser = initialize_browser()
-    account = database['accounts'][accountIndex]
-    hashtag = database['hashtags'][accountIndex]
-
-    print(getCommentedPosts(account))
-
-    login_to_instagram(browser, account)
-    sleep(5)
-    for post in range(int(database['number_of_comments'])):
-        comment = database['comment_list'][randint(0, len(database['comment_list']) - 1)]
-        comment_instagram(browser, hashtag, comment, post)
-    
-    printLogtoFile(f'[INFO]: Finished commenting on {account[0]}', "logs/log.txt")
-    browser.close()
-
-
-def parentBot(number_of_accounts):
-    for i in range(number_of_accounts):
-        pid = os.fork()
-        if pid == 0:
-            launch_bot_instance(i)
-            return
-
-
 if __name__ == "__main__":
+    top = LoginPage()
+    top.title("login")
+    root = MyApp()
+    root.withdraw()
+    root.title("instagram comment bot")
     root.mainloop()

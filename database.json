@@ -1,0 +1,42 @@
+{
+    "accounts": [
+        [
+            "rordongamsey53",
+            "Cacapipi!"
+        ],
+        [
+            "test123",
+            "test123"
+        ],
+        [
+            "test",
+            "test"
+        ],
+        [
+            "test",
+            "test"
+        ]
+    ],
+    "hashtags": [
+        "car",
+        "bike",
+        "tes",
+        "tes"
+    ],
+    "comment_list": [
+        "hello",
+        "hello!",
+        "hello :)"
+    ],
+    "number_of_posts": 10,
+    "chance_to_comment": 1,
+    "wait_between_posts": {
+        "min": 2,
+        "max": 5
+    },
+    "wait_to_comment": {
+        "min": 2,
+        "max": 10
+    },
+    "like": false
+}
