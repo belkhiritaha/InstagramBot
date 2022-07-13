@@ -6,6 +6,7 @@ from random import randint
 import os
 from os.path import exists
 import multiprocessing
+from turtle import pos
 
 
 # Library Imports
@@ -40,10 +41,26 @@ logger = logging.getLogger()
 
 
 def printLogtoFile(log, path):
-    f = open(path, 'w+')
+    f = open(path, 'w')
     f.write(log)
     f.close()
 
+
+def getCommentedPosts(account):
+    if exists(account[0]+".txt"):            # if file exists, open it on r+
+        file = open(account[0]+".txt","r+")
+    else:
+        file = open(account[0]+".txt", "w+") # else, create it and open it
+
+    lines = file.readlines()
+    return lines
+
+
+def updateCommentFile(account, postUrl):
+    with open(account[0]+".txt", "a") as file:
+        file.write(postUrl + "\n")
+    file.close()
+    
 
 def initialize_browser():
 
@@ -78,14 +95,7 @@ def login_to_instagram(browser, account):
     logger.info("Logged in to account " + account[0])
 
 
-def comment_instagram(browser, hashtag, comment_to_send, post_count):
-    # Keep track of how many you like and comment
-    likes = 0
-    comments = 0
-
-    with open(r".\database.json" , "r") as file:
-        database = json.load(file)
-
+def open_post(browser, accountIndex, hashtag, post_count):
     browser.implicitly_wait(30)
     browser.get(f'https://www.instagram.com/explore/tags/{hashtag}/')
     printLogtoFile(f'Exploring #{hashtag} \n', r".\logs\log.txt")
@@ -97,7 +107,12 @@ def comment_instagram(browser, hashtag, comment_to_send, post_count):
     browser.find_elements(By.CLASS_NAME, '_a6hd')[post_count].click()
 
     sleep(2)
+
+def comment_instagram(browser, accountIndex, hashtag, comment_to_send, post_count):
+    sleep(2)
     commented = False
+    currentUrl = browser.current_url
+    print(getCommentedPosts(account_info[accountIndex]))  
     while not commented:
         try:
             comment = browser.find_element(By.CLASS_NAME, '_aaoc')
@@ -105,20 +120,10 @@ def comment_instagram(browser, hashtag, comment_to_send, post_count):
             printLogtoFile(f'Commented on post #{post_count} \n', r".\logs\log.txt")
             logger.info(f'Commented on post #{post_count}')
             commented = True
+            updateCommentFile(database["accounts"][accountIndex] , currentUrl)
         except WebDriverException:
-            printLogtoFile("Could not comment on post\n", r".\logs\log.txt")
-            logger.info("Could not comment on post")
-
-
-
-def getCommentedPosts(account):
-    if exists(account[0]+".txt"):            # if file exists, open it on r+
-        file = open(account[0]+".txt","r+")
-    else:
-        file = open(account[0]+".txt", "w+") # else, create it and open it
-
-    lines = file.readlines()
-    return lines
+            printLogtoFile("Trying to comment on post\n", r".\logs\log.txt")
+            logger.info("Trying to comment on post")
 
 
 
@@ -127,13 +132,23 @@ def launch_bot_instance(accountIndex):
     account = database['accounts'][accountIndex]
     hashtag = database['hashtags'][accountIndex]
 
-    print(getCommentedPosts(account))
-
     login_to_instagram(browser, account)
     sleep(5)
-    for post in range(int(database['number_of_comments'])):
+    count = 0
+    post = 0
+    while count < int(database['number_of_comments']):
         comment = database['comment_list'][randint(0, len(database['comment_list']) - 1)]
-        comment_instagram(browser, hashtag, comment, post)
+        open_post(browser, accountIndex, hashtag, post)
+        currentUrl = browser.current_url
+        if currentUrl+'\n' not in getCommentedPosts(database["accounts"][accountIndex]):   
+            comment_instagram(browser, accountIndex, hashtag, comment, post)
+            count += 1
+            post += 1
+        else:
+            printLogtoFile("Already commented on post #" + str(post) + "\n", r".\logs\log.txt")
+            logger.info("Already commented on post #" + str(post))
+            post += 1
+            continue
     
     printLogtoFile(f'[INFO]: Finished commenting on {account[0]}', r".\logs\log.txt")
     logger.info(f'[INFO]: Finished commenting on {account[0]}')

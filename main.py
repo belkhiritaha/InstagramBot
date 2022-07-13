@@ -11,7 +11,7 @@ from tkinter import messagebox
 from tkinter import ttk
 import multiprocessing
 
-from render import *
+from logic import *
 
 
 with open(r".\database.json" , "r") as file:
