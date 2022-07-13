@@ -9,18 +9,9 @@ from os.path import exists
 import tkinter as tk
 from tkinter import messagebox
 from tkinter import ttk
-
 import multiprocessing
 
-# Library Imports
-from selenium import webdriver
-from selenium.webdriver.common.keys import Keys
-from selenium.webdriver.common.by import By
-from selenium.common.exceptions import WebDriverException, ElementClickInterceptedException
-from webdriver_manager.chrome import ChromeDriverManager as CM
-import chromedriver_autoinstaller
-from tkinter import *
-from tkinter.scrolledtext import ScrolledText
+from render import *
 
 
 with open(r".\database.json" , "r") as file:
@@ -29,9 +20,10 @@ with open(r".\database.json" , "r") as file:
 #close file
 file.close()
 
+print(database["comment_list"])
+
 numberOfAccounts = len(database['accounts'])
 account_info = [database['accounts'][i] + [database['hashtags'][i]] for i in range(numberOfAccounts)]
-print(account_info)
 
 frame_styles = {"relief": "groove",
                 "bd": 3, "bg": "#BEB2A7",
@@ -39,6 +31,7 @@ frame_styles = {"relief": "groove",
 
 last_info = "Starting up... (logs will be saved to logs.txt)"
 
+multiprocessing.freeze_support()
 
 ######################################GUI#############################################
 
@@ -215,15 +208,33 @@ class Some_Widgets(GUI):  # inherits from the GUI class
         for column in column_list_account:
             tv1.heading(column, text=column)
             tv1.column(column, width=50)
-        tv1.place(relheight=1, relwidth=0.995)
+        tv1.place(relheight=0.7, relwidth=0.995)
         treescroll = tk.Scrollbar(frame1)
         treescroll.configure(command=tv1.yview)
         tv1.configure(yscrollcommand=treescroll.set)
         treescroll.pack(side="right", fill="y")
+        
+        tv2 = ttk.Treeview(frame2)
+        column_list_comment = ["comments"]
+        tv2['columns'] = column_list_comment
+        tv2["show"] = "headings"  # removes empty column
+        for column in column_list_comment:
+            tv2.heading(column, text=column)
+            tv2.column(column, width=150, anchor="center")
+        tv2.place(relheight=1, relwidth=0.3, rely=0, relx=0.7)
+        treescroll2 = tk.Scrollbar(frame2)
+        treescroll2.configure(command=tv2.yview)
+        tv2.configure(yscrollcommand=treescroll2.set)
+        treescroll2.pack(side="right", fill="y")
+        
 
-        def Load_data():
+        def Load_AccData():
             for row in account_info:
                 tv1.insert("", "end", values=row)
+
+        def Load_CommentData():
+            for comment in database["comment_list"]:
+                tv2.insert("", "end", values=(comment,))
 
         def add_account():
             # Deletes the data in the current treeview and reinserts it.
@@ -236,13 +247,16 @@ class Some_Widgets(GUI):  # inherits from the GUI class
                 json.dump(database, f)
             
             tv1.delete(*tv1.get_children())  # *=splat operator
-            Load_data()
+            Load_AccData()
 
         def add_comment():
             database["comment_list"].append(input4.get())
             #write into new file
             with open(r".\database.json" , 'w+') as f:
                 json.dump(database, f)
+
+            tv2.delete(*tv2.get_children())  # *=splat operator
+            Load_CommentData()
 
         def update_number_of_comments():
             database["number_of_comments"] = input5.get()
@@ -252,190 +266,13 @@ class Some_Widgets(GUI):  # inherits from the GUI class
             numberOfAccounts = len(account_info)
             parentBot(numberOfAccounts)
             
-
-        Load_data()
-
-
-class PageOne(GUI):
-    def __init__(self, parent, controller):
-        GUI.__init__(self, parent)
-
-        label1 = tk.Label(self.main_frame, font=("Verdana", 20), text="Page One")
-        label1.pack(side="top")
-
-
-class PageThree(GUI):
-    def __init__(self, parent, controller):
-        GUI.__init__(self, parent)
-
-        label1 = tk.Label(self.main_frame, font=("Verdana", 20), text="Page Three")
-        label1.pack(side="top")
-
-
-class PageFour(GUI):
-    def __init__(self, parent, controller):
-        GUI.__init__(self, parent)
-
-        label1 = tk.Label(self.main_frame, font=("Verdana", 20), text="Page Four")
-        label1.pack(side="top")
-
-
-class PageTwo(GUI):
-    def __init__(self, parent, controller):
-        GUI.__init__(self, parent)
-
-        label1 = tk.Label(self.main_frame, font=("Verdana", 20), text="Page Two")
-        label1.pack(side="top")
-
-
-class OpenNewWindow(tk.Tk):
-
-    def __init__(self, *args, **kwargs):
-
-        tk.Tk.__init__(self, *args, **kwargs)
-
-        main_frame = tk.Frame(self)
-        main_frame.pack_propagate(0)
-        main_frame.pack(fill="both", expand="true")
-        main_frame.grid_rowconfigure(0, weight=1)
-        main_frame.grid_columnconfigure(0, weight=1)
-        self.title("Here is the Title of the Window")
-        self.geometry("500x500")
-        self.resizable(0, 0)
-
-        frame1 = ttk.LabelFrame(main_frame, text="This is a ttk LabelFrame")
-        frame1.pack(expand=True, fill="both")
-
-        label1 = tk.Label(frame1, font=("Verdana", 20), text="OpenNewWindow Page")
-        label1.pack(side="top")
-
-
-top = LoginPage()
-top.title("login")
-root = MyApp()
-root.withdraw()
-root.title("instagram comment bot")
-
-
-logging.basicConfig(
-    format='%(levelname)s [%(asctime)s] %(message)s', datefmt='%m/%d/%Y %r', level=logging.INFO)
-logger = logging.getLogger()
-
-def printLogtoFile(log, path):
-    f = open(path, 'w+')
-    f.write(log)
-    f.close()
-
-
-def insert_entry(container, string_to_i, row, column):
-    entry_widget = Entry(container)
-    entry_widget.insert("end", string_to_i)
-    entry_widget.grid(row=row, column=column)
-    return entry_widget
-
-
-def initialize_browser():
-
-    # Do this so we don't get DevTools and Default Adapter failure
-    options = webdriver.ChromeOptions()
-    # options.add_experimental_option('excludeSwitches', ['enable-logging'])
-    options.add_argument("--log-level=3")
-
-    chromedriver_autoinstaller.install()
-
-    # Initialize chrome driver and set chrome as our browser
-    browser = webdriver.Chrome()
-
-    return browser
-
-
-def login_to_instagram(browser, account):
-    browser.get('https://www.instagram.com/')
-
-    sleep(2)
-
-    # Get the login elements and type in your credentials
-
-    browser.implicitly_wait(30)
-    username = browser.find_element(By.NAME, 'username')
-    username.send_keys(account[0])
-    browser.implicitly_wait(30)
-    password = browser.find_element(By.NAME, 'password')
-    password.send_keys(account[1])
-    password.submit()
-
-    sleep(2)
-    printLogtoFile("Logged in to account " + account[0] + "\n", r".\logs\log.txt")
-    logger.info("Logged in to account " + account[0])
-
-
-def comment_instagram(browser, hashtag, comment_to_send, post_count):
-    # Keep track of how many you like and comment
-    likes = 0
-    comments = 0
-
-    with open(r".\database.json" , "r") as file:
-        database = json.load(file)
-
-    browser.implicitly_wait(30)
-    browser.get(f'https://www.instagram.com/explore/tags/{hashtag}/')
-    printLogtoFile(f'Exploring #{hashtag} \n', r".\logs\log.txt")
-    logger.info(f'Exploring #{hashtag}')
-    sleep(randint(1, 2))
-
-        # Click first thumbnail to open
-    browser.implicitly_wait(30)
-    browser.find_elements(By.CLASS_NAME, '_a6hd')[post_count].click()
-
-    sleep(2)
-    commented = False
-    while not commented:
-        try:
-            comment = browser.find_element(By.CLASS_NAME, '_aaoc')
-            comment.send_keys(comment_to_send, Keys.ENTER)
-            printLogtoFile(f'Commented on post #{post_count} \n', r".\logs\log.txt")
-            logger.info(f'Commented on post #{post_count}')
-            commented = True
-        except WebDriverException:
-            printLogtoFile("Could not comment on post\n", r".\logs\log.txt")
-            logger.info("Could not comment on post")
-
-
-
-def getCommentedPosts(account):
-    if exists(account[0]+".txt"):            # if file exists, open it on r+
-        file = open(account[0]+".txt","r+")
-    else:
-        file = open(account[0]+".txt", "w+") # else, create it and open it
-
-    lines = file.readlines()
-    return lines
-
-
-
-def launch_bot_instance(accountIndex):
-    browser = initialize_browser()
-    account = database['accounts'][accountIndex]
-    hashtag = database['hashtags'][accountIndex]
-
-    print(getCommentedPosts(account))
-
-    login_to_instagram(browser, account)
-    sleep(5)
-    for post in range(int(database['number_of_comments'])):
-        comment = database['comment_list'][randint(0, len(database['comment_list']) - 1)]
-        comment_instagram(browser, hashtag, comment, post)
-    
-    printLogtoFile(f'[INFO]: Finished commenting on {account[0]}', r".\logs\log.txt")
-    logger.info(f'[INFO]: Finished commenting on {account[0]}')
-    browser.close()
-
-
-def parentBot(number_of_accounts):
-    for i in range(number_of_accounts):
-        pid = multiprocessing.Process(target=launch_bot_instance, args=(i,))
-        pid.start()
-
+        Load_AccData()
+        Load_CommentData()
 
 if __name__ == "__main__":
+    top = LoginPage()
+    top.title("login")
+    root = MyApp()
+    root.withdraw()
+    root.title("instagram comment bot")
     root.mainloop()
