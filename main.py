@@ -1,3 +1,4 @@
+from cmath import log
 from time import sleep
 import logging
 import json
@@ -9,6 +10,7 @@ import tkinter as tk
 from tkinter import messagebox
 from tkinter import ttk
 
+import multiprocessing
 
 # Library Imports
 from selenium import webdriver
@@ -16,11 +18,12 @@ from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.common.by import By
 from selenium.common.exceptions import WebDriverException, ElementClickInterceptedException
 from webdriver_manager.chrome import ChromeDriverManager as CM
+import chromedriver_autoinstaller
 from tkinter import *
 from tkinter.scrolledtext import ScrolledText
 
 
-with open("data/database.json", "r") as file:
+with open(r".\database.json" , "r") as file:
     database = json.load(file)
 
 #close file
@@ -229,7 +232,7 @@ class Some_Widgets(GUI):  # inherits from the GUI class
             database["accounts"].append([input1.get(), input2.get()])
             database["hashtags"].append(input3.get())
             #write into new file
-            with open('data/database.json', 'w+') as f:
+            with open(r".\database.json" , 'w+') as f:
                 json.dump(database, f)
             
             tv1.delete(*tv1.get_children())  # *=splat operator
@@ -238,13 +241,13 @@ class Some_Widgets(GUI):  # inherits from the GUI class
         def add_comment():
             database["comment_list"].append(input4.get())
             #write into new file
-            with open('data/database.json', 'w+') as f:
+            with open(r".\database.json" , 'w+') as f:
                 json.dump(database, f)
 
         def update_number_of_comments():
             database["number_of_comments"] = input5.get()
             #write into new file
-            with open('data/database.json', 'w+') as f:
+            with open(r".\database.json" , 'w+') as f:
                 json.dump(database, f)
             numberOfAccounts = len(account_info)
             parentBot(numberOfAccounts)
@@ -338,8 +341,10 @@ def initialize_browser():
     # options.add_experimental_option('excludeSwitches', ['enable-logging'])
     options.add_argument("--log-level=3")
 
+    chromedriver_autoinstaller.install()
+
     # Initialize chrome driver and set chrome as our browser
-    browser = webdriver.Chrome(executable_path=CM().install(), options=options)
+    browser = webdriver.Chrome()
 
     return browser
 
@@ -352,15 +357,16 @@ def login_to_instagram(browser, account):
     # Get the login elements and type in your credentials
 
     browser.implicitly_wait(30)
-    username = browser.find_element_by_name('username')
+    username = browser.find_element(By.NAME, 'username')
     username.send_keys(account[0])
     browser.implicitly_wait(30)
-    password = browser.find_element_by_name('password')
+    password = browser.find_element(By.NAME, 'password')
     password.send_keys(account[1])
     password.submit()
 
     sleep(2)
-    printLogtoFile("Logged in to account " + account[0] + "\n", "logs/log.txt")
+    printLogtoFile("Logged in to account " + account[0] + "\n", r".\logs\log.txt")
+    logger.info("Logged in to account " + account[0])
 
 
 def comment_instagram(browser, hashtag, comment_to_send, post_count):
@@ -368,12 +374,13 @@ def comment_instagram(browser, hashtag, comment_to_send, post_count):
     likes = 0
     comments = 0
 
-    with open("data/database.json", "r") as file:
+    with open(r".\database.json" , "r") as file:
         database = json.load(file)
 
     browser.implicitly_wait(30)
     browser.get(f'https://www.instagram.com/explore/tags/{hashtag}/')
-    printLogtoFile(f'Exploring #{hashtag} \n', "logs/log.txt")
+    printLogtoFile(f'Exploring #{hashtag} \n', r".\logs\log.txt")
+    logger.info(f'Exploring #{hashtag}')
     sleep(randint(1, 2))
 
         # Click first thumbnail to open
@@ -386,10 +393,12 @@ def comment_instagram(browser, hashtag, comment_to_send, post_count):
         try:
             comment = browser.find_element(By.CLASS_NAME, '_aaoc')
             comment.send_keys(comment_to_send, Keys.ENTER)
-            printLogtoFile(f'Commented on post #{post_count} \n', "logs/log.txt")
+            printLogtoFile(f'Commented on post #{post_count} \n', r".\logs\log.txt")
+            logger.info(f'Commented on post #{post_count}')
             commented = True
         except WebDriverException:
-            printLogtoFile("Could not comment on post\n", "logs/log.txt")
+            printLogtoFile("Could not comment on post\n", r".\logs\log.txt")
+            logger.info("Could not comment on post")
 
 
 
@@ -405,10 +414,6 @@ def getCommentedPosts(account):
 
 
 def launch_bot_instance(accountIndex):
-    # open database
-    with open("data/database.json", "r") as file:
-        database = json.load(file)
-
     browser = initialize_browser()
     account = database['accounts'][accountIndex]
     hashtag = database['hashtags'][accountIndex]
@@ -421,16 +426,15 @@ def launch_bot_instance(accountIndex):
         comment = database['comment_list'][randint(0, len(database['comment_list']) - 1)]
         comment_instagram(browser, hashtag, comment, post)
     
-    printLogtoFile(f'[INFO]: Finished commenting on {account[0]}', "logs/log.txt")
+    printLogtoFile(f'[INFO]: Finished commenting on {account[0]}', r".\logs\log.txt")
+    logger.info(f'[INFO]: Finished commenting on {account[0]}')
     browser.close()
 
 
 def parentBot(number_of_accounts):
     for i in range(number_of_accounts):
-        pid = os.fork()
-        if pid == 0:
-            launch_bot_instance(i)
-            return
+        pid = multiprocessing.Process(target=launch_bot_instance, args=(i,))
+        pid.start()
 
 
 if __name__ == "__main__":
