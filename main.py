@@ -1,7 +1,12 @@
+#/usr/bin/env python3
+
+from copy import copy
+from gc import isenabled
+from lib2to3.pgen2 import driver
 from time import sleep
 import logging
 import json
-from random import randint
+from random import randint, random
 import os
 from os.path import exists
 
@@ -19,6 +24,7 @@ from webdriver_manager.chrome import ChromeDriverManager as CM
 from tkinter import *
 from tkinter.scrolledtext import ScrolledText
 
+import names
 
 with open("data/database.json", "r") as file:
     database = json.load(file)
@@ -425,11 +431,117 @@ def launch_bot_instance(accountIndex):
     browser.close()
 
 
+def create_new_account(accountName, accountPassword):
+    #open database
+    with open("data/database.json", "r") as file:
+        database = json.load(file)
+
+    browser = initialize_browser()
+    print("opening mailsac")
+    browser.get("https://tempail.com/fr/")
+
+    print("Generating a new name")
+    fullname = names.get_full_name(gender='female')
+    firstname = fullname.split(' ')[0]
+    lastname = fullname.split(' ')[1]
+    random_int = randint(100,900)
+    mail = firstname.lower() + '.' + lastname.lower() + str(random_int)
+    passwd = firstname + lastname + str(random_int)
+
+    print("---- NEW ACC INFO ----")
+    print("Name: " + fullname)
+    print("username: " + mail)
+    print("Pass: " + passwd)
+    print("-----------------------") 
+
+
+    #sleep 5 seconds to let the page load
+    browser.implicitly_wait(5)
+    copyBtn = browser.find_element(By.ID, "eposta_adres")
+    copyBtn.click()
+
+    browser2 = initialize_browser()
+    browser2.get("https://www.instagram.com/accounts/emailsignup/")
+
+    sleep(1)
+    mailField = browser2.find_element(By.NAME, 'emailOrPhone')
+    mailField.click()
+    mailField.send_keys(Keys.CONTROL + 'v')
+
+    fullnameField = browser2.find_element(By.NAME, 'fullName')
+    fullnameField.send_keys(fullname)
+    
+    sleep(1)
+
+    usernameField = browser2.find_element(By.NAME, 'username')
+    usernameField.send_keys(mail)
+
+    sleep(1)
+
+    passwordField = browser2.find_element(By.NAME, 'password')
+    passwordField.send_keys(passwd)
+    passwordField.send_keys(Keys.ENTER)
+
+    sleep(1)
+
+    sleep(0.5)
+    monthField = browser2.find_element(By.CSS_SELECTOR, "[title^='Month:']")
+    monthField.click()
+    for i in range(randint(0,4)):
+        monthField.send_keys(Keys.DOWN)
+        sleep(0.1)
+    monthField.send_keys(Keys.ENTER)
+    print("done month")
+
+    dayField = browser2.find_element(By.CSS_SELECTOR, "[title^='Day:']")
+    dayField.click()
+    for i in range(randint(0,30)):
+        dayField.send_keys(Keys.DOWN)
+        sleep(0.1)
+    dayField.send_keys(Keys.ENTER)
+    print("done day")
+
+    yearField = browser2.find_element(By.CSS_SELECTOR, "[title^='Year:']")
+    yearField.click()
+    for i in range(randint(1,10)):
+        yearField.send_keys('1')
+        sleep(0.1)
+    yearField.send_keys(Keys.ENTER)
+    print("done year")
+
+    sleep(1)
+
+    print("clicking on sign up")
+    nextBtn = browser2.find_element(By.CLASS_NAME, 'sqdOP')
+    nextBtn.click()
+
+    sleep(5)
+    #refresh browser
+    print("refreshing browser")
+    browser.refresh()
+    #get text from class 'baslik'
+    nb = len(browser.find_elements(By.CLASS_NAME, 'baslik'))
+    while nb < 6:
+        sleep(5)
+        browser.refresh()
+        nb = len(browser.find_elements(By.CLASS_NAME, 'baslik'))
+    textCode = browser.find_elements(By.CLASS_NAME, 'baslik')[5].text
+    code = textCode.split(' ')[0]
+    print("code: " + code)
+
+    sleep(100)
+
+    printLogtoFile(f'[INFO]: Created new account {accountName}', "logs/log.txt")
+
+
+
+
 def parentBot(number_of_accounts):
-    for i in range(number_of_accounts):
+    for i in range(1):
         pid = os.fork()
         if pid == 0:
-            launch_bot_instance(i)
+            #launch_bot_instance(i)
+            create_new_account("zauieuza","aozijeoijeza")
             return
 
 
